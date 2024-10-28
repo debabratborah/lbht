@@ -89,19 +89,7 @@ if uploaded_file is not None:
             st.warning("The person has heart disease.")
 
     # Step 4: Save predictions in SQL
-    if st.button("Save Prediction"):
-        actual = None  # Set actual label if known
-        predicted = int(prediction[0])
 
-        cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, actual INTEGER, predicted INTEGER)")
-        cursor.execute("INSERT INTO predictions (actual, predicted) VALUES (?, ?)", (actual, predicted))
-        conn.commit()
-        st.write("Prediction saved to the database.")
-
-    # Step 5: Display predictions from the database
-    if st.button("Show Predictions"):
-        prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
-        st.write(prediction_df)
 
     # Close the database connection
     conn.close()
