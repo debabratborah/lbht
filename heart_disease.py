@@ -89,7 +89,41 @@ if uploaded_file is not None:
             st.warning("The person has heart disease.")
 
     # Step 4: Save predictions in SQL
+    if st.button("Save Prediction"):
+        actual = None  # Set actual label if known
+        predicted = int(prediction[0])
 
+        cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, actual INTEGER, predicted INTEGER)")
+        cursor.execute("INSERT INTO predictions (actual, predicted) VALUES (?, ?)", (actual, predicted))
+        conn.commit()
+        st.write("Prediction saved to the database.")
+
+    # Step 5: Display predictions from the database
+    if st.button("Show Predictions"):
+        prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
+        st.write(prediction_df)
+
+    # Step 6: Data Filtering
+    st.header("Filter Data")
+    age_filter = st.number_input("Filter Age", min_value=1, max_value=120)
+    filtered_data = pd.read_sql_query(f"SELECT * FROM heart_data WHERE age > {age_filter}", conn)
+    st.write(filtered_data)
+
+    # Step 7: Update Records
+    st.header("Update Record")
+    record_id = st.number_input("Enter Record ID to Update", min_value=1)
+    new_target = st.selectbox("New Target Value (0 or 1)", [0, 1])
+    
+    if st.button("Update Record"):
+        cursor.execute("UPDATE heart_data SET target = ? WHERE id = ?", (new_target, record_id))
+        conn.commit()
+        st.write("Record updated successfully.")
+
+    # Step 8: Aggregate Data
+    st.header("Aggregate Data")
+    agg_query = "SELECT target, AVG(chol) as avg_chol FROM heart_data GROUP BY target"
+    agg_data = pd.read_sql_query(agg_query, conn)
+    st.write(agg_data)
 
     # Close the database connection
     conn.close()
