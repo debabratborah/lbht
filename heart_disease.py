@@ -118,13 +118,27 @@ if uploaded_file is not None:
 
     # Step 7: Update Records
     st.header("Update Record")
-    record_id = st.number_input("Enter Record ID to Update", min_value=1)
+    record_id = st.number_input("Enter Record ID to Update", min_value=1, step=1)
     new_target = st.selectbox("New Target Value (0 or 1)", [0, 1])
-    
+
     if st.button("Update Record"):
-        cursor.execute("UPDATE heart_data SET target = ? WHERE id = ?", (new_target, record_id))
-        conn.commit()
-        st.write("Record updated successfully.")
+        try:
+            # Attempt to update the record in the database
+            cursor.execute("UPDATE heart_data SET target = ? WHERE id = ?", (new_target, record_id))
+            
+            # Commit the changes to the database
+            conn.commit()
+            
+            # Check if any rows were affected
+            if cursor.rowcount > 0:
+                st.success("Record updated successfully.")
+            else:
+                st.warning("No record found with the specified ID.")
+
+        except sqlite3.Error as e:
+            st.error(f"An error occurred while updating the record: {e}")
+        finally:
+            pass
 
     # Step 8: Aggregate Data
     st.header("Aggregate Data")
