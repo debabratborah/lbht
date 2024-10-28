@@ -17,7 +17,7 @@ cursor = conn.cursor()
 create_table_query = '''
 CREATE TABLE IF NOT EXISTS heart_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,  -- Add a column for user names
+    name TEXT,
     age INTEGER,
     sex INTEGER,
     cp INTEGER,
@@ -51,6 +51,8 @@ if uploaded_file is not None:
 
     # Step 2: Train the Model
     df = pd.read_sql_query("SELECT * FROM heart_data", conn)
+
+    # Proceed directly with model training
     X = df.drop(columns=['target', 'name'], axis=1)  # Exclude 'name' from features
     Y = df['target'].values
 
@@ -111,5 +113,3 @@ if uploaded_file is not None:
 
 # Close the database connection
 conn.close()
-
-
