@@ -9,6 +9,10 @@ from sklearn.metrics import accuracy_score
 # Streamlit interface
 st.title("Heart Disease Prediction App")
 
+# Initialize session state for prediction if not already done
+if 'prediction' not in st.session_state:
+    st.session_state.prediction = None
+
 # Upload CSV
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file is not None:
@@ -79,21 +83,19 @@ if uploaded_file is not None:
     ca = st.selectbox("Number of Major Vessels (0-3)", [0, 1, 2, 3])
     thal = st.selectbox("Thal (1 = Normal, 2 = Fixed Defect, 3 = Reversable Defect)", [1, 2, 3])
 
-    prediction = None  # Initialize prediction variable
-
     if st.button("Predict"):
         input_data = np.array([age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]).reshape(1, -1)
-        prediction = model.predict(input_data)
+        st.session_state.prediction = model.predict(input_data)  # Store prediction in session state
 
-        if prediction[0] == 0:
+        if st.session_state.prediction[0] == 0:
             st.success("The person does not have heart disease.")
         else:
             st.warning("The person has heart disease.")
 
     # Step 4: Save predictions in SQL
     if st.button("Save Prediction"):
-        if prediction is not None:  # Ensure prediction is made before saving
-            predicted = int(prediction[0])  # Get the predicted value
+        if st.session_state.prediction is not None:  # Ensure prediction is made before saving
+            predicted = int(st.session_state.prediction[0])  # Get the predicted value
             
             # Insert into predictions table
             cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, predicted INTEGER)")
@@ -107,10 +109,6 @@ if uploaded_file is not None:
     if st.button("Show Predictions"):
         prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
         st.write(prediction_df)
-
-    # Close the database connection
-    
-
 
     # Step 6: Data Filtering
     st.header("Filter Data")
@@ -136,3 +134,4 @@ if uploaded_file is not None:
 
     # Close the database connection
     conn.close()
+
