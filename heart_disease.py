@@ -63,7 +63,7 @@ if uploaded_file is not None:
     st.write(f"Training Accuracy: {train_accuracy}")
     st.write(f"Test Accuracy: {test_accuracy}")
 
-    # Step 3: Predict heart disease based on user input
+        # Step 3: Predict heart disease based on user input
     st.header("Predict Heart Disease")
     age = st.number_input("Age", min_value=1, max_value=120, value=30)
     sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0, 1])
@@ -79,6 +79,8 @@ if uploaded_file is not None:
     ca = st.selectbox("Number of Major Vessels (0-3)", [0, 1, 2, 3])
     thal = st.selectbox("Thal (1 = Normal, 2 = Fixed Defect, 3 = Reversable Defect)", [1, 2, 3])
 
+    prediction = None  # Initialize prediction variable
+
     if st.button("Predict"):
         input_data = np.array([age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]).reshape(1, -1)
         prediction = model.predict(input_data)
@@ -90,13 +92,20 @@ if uploaded_file is not None:
 
     # Step 4: Save predictions in SQL
     if st.button("Save Prediction"):
-        actual = None  # Set actual label if known
-        predicted = int(prediction[0])
+        # Check if prediction is made
+        if prediction is not None:
+            actual = None  # Set actual label if known
+            predicted = int(prediction[0])
 
-        cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, actual INTEGER, predicted INTEGER)")
-        cursor.execute("INSERT INTO predictions (actual, predicted) VALUES (?, ?)", (actual, predicted))
-        conn.commit()
-        st.write("Prediction saved to the database.")
+            cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, actual INTEGER, predicted INTEGER)")
+            cursor.execute("INSERT INTO predictions (actual, predicted) VALUES (?, ?)", (actual, predicted))
+            conn.commit()
+            st.write("Prediction saved to the database.")
+        else:
+            st.error("Please make a prediction before saving.")
+
+# Step 3: Predict heart disease based on user input
+
 
     # Step 5: Display predictions from the database
     if st.button("Show Predictions"):
