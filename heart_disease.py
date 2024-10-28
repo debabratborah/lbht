@@ -42,12 +42,7 @@ uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file is not None:
     heart_data = pd.read_csv(uploaded_file)
     
-    # Ensure the CSV contains a 'name' column
-    if 'name' not in heart_data.columns:
-        st.error("The CSV file must contain a 'name' column.")
-    else:
-        st.write("Data Preview:")
-        st.dataframe(heart_data)
+
 
         # Insert data into the SQL table
         heart_data.to_sql('heart_data', conn, if_exists='replace', index=False)
