@@ -63,7 +63,7 @@ if uploaded_file is not None:
     st.write(f"Training Accuracy: {train_accuracy}")
     st.write(f"Test Accuracy: {test_accuracy}")
 
-        # Step 3: Predict heart disease based on user input
+    # Step 3: Predict heart disease based on user input
     st.header("Predict Heart Disease")
     age = st.number_input("Age", min_value=1, max_value=120, value=30)
     sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0, 1])
@@ -92,25 +92,25 @@ if uploaded_file is not None:
 
     # Step 4: Save predictions in SQL
     if st.button("Save Prediction"):
-        # Check if prediction is made
-        if prediction is not None:
-            actual = None  # Set actual label if known
-            predicted = int(prediction[0])
-
-            cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, actual INTEGER, predicted INTEGER)")
-            cursor.execute("INSERT INTO predictions (actual, predicted) VALUES (?, ?)", (actual, predicted))
+        if prediction is not None:  # Ensure prediction is made before saving
+            predicted = int(prediction[0])  # Get the predicted value
+            
+            # Insert into predictions table
+            cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, predicted INTEGER)")
+            cursor.execute("INSERT INTO predictions (predicted) VALUES (?)", (predicted,))
             conn.commit()
             st.write("Prediction saved to the database.")
         else:
             st.error("Please make a prediction before saving.")
 
-# Step 3: Predict heart disease based on user input
-
-
     # Step 5: Display predictions from the database
     if st.button("Show Predictions"):
         prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
         st.write(prediction_df)
+
+    # Close the database connection
+    
+
 
     # Step 6: Data Filtering
     st.header("Filter Data")
