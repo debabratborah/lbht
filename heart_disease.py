@@ -14,7 +14,7 @@ if 'prediction' not in st.session_state:
     st.session_state.prediction = None
 
 # Upload CSV
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+uploaded_file = pd.read_csv("heart_disease_data.csv")
 if uploaded_file is not None:
     heart_data = pd.read_csv(uploaded_file)
     st.write("Data Preview:")
