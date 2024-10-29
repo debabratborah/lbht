@@ -69,6 +69,7 @@ if uploaded_file is not None:
 
     # Step 3: Predict heart disease based on user input
     st.header("Predict Heart Disease")
+    name = st.text_input("Enter your name:")  # Input for name
     age = st.number_input("Age", min_value=1, max_value=120, value=30)
     sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0, 1])
     cp = st.selectbox("Chest Pain Type (0, 1, 2, 3)", [0, 1, 2, 3])
@@ -88,9 +89,9 @@ if uploaded_file is not None:
         st.session_state.prediction = model.predict(input_data)  # Store prediction in session state
 
         if st.session_state.prediction[0] == 0:
-            st.success("The person does not have heart disease.")
+            st.success(f"{name} does not have heart disease.")
         else:
-            st.warning("The person has heart disease.")
+            st.warning(f"{name} has heart disease.")
 
     # Step 4: Save predictions in SQL
     if st.button("Save Prediction"):
@@ -98,8 +99,8 @@ if uploaded_file is not None:
             predicted = int(st.session_state.prediction[0])  # Get the predicted value
             
             # Insert into predictions table
-            cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, predicted INTEGER)")
-            cursor.execute("INSERT INTO predictions (predicted) VALUES (?)", (predicted,))
+            cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, predicted INTEGER)")
+            cursor.execute("INSERT INTO predictions (name, predicted) VALUES (?, ?)", (name, predicted))
             conn.commit()
             st.write("Prediction saved to the database.")
         else:
@@ -107,7 +108,7 @@ if uploaded_file is not None:
 
     # Step 5: Display predictions from the database
     if st.button("Show Predictions"):
-        prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
+        prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions", conn)
         st.write(prediction_df)
 
     # Step 6: Data Filtering
@@ -115,8 +116,6 @@ if uploaded_file is not None:
     age_filter = st.number_input("Filter Age", min_value=1, max_value=120)
     filtered_data = pd.read_sql_query(f"SELECT * FROM heart_data WHERE age > {age_filter}", conn)
     st.write(filtered_data)
-
-   
 
     # Step 8: Aggregate Data
     st.header("Aggregate Data")
@@ -126,4 +125,3 @@ if uploaded_file is not None:
 
     # Close the database connection
     conn.close()
-
