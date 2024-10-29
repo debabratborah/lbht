@@ -98,11 +98,30 @@ if uploaded_file is not None:
         if st.session_state.prediction is not None:  # Ensure prediction is made before saving
             predicted = int(st.session_state.prediction[0])  # Get the predicted value
             
-            # Insert into predictions table
-            cursor.execute("CREATE TABLE IF NOT EXISTS predictions (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, predicted INTEGER)")
-            cursor.execute("INSERT INTO predictions (name, predicted) VALUES (?, ?)", (name, predicted))
-            conn.commit()
-            st.write("Prediction saved to the database.")
+            try:
+                # Create the predictions table if it does not exist
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS predictions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    predicted INTEGER NOT NULL
+                )
+                ''')
+                conn.commit()
+
+                # Insert into predictions table
+                if name:  # Ensure name is not empty
+                    cursor.execute("INSERT INTO predictions (name, predicted) VALUES (?, ?)", (name, predicted))
+                    conn.commit()
+                    st.write("Prediction saved to the database.")
+                else:
+                    st.error("Name cannot be empty. Please enter a name.")
+            
+            except sqlite3.OperationalError as e:
+                st.error(f"Operational Error: {e}")
+            
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
         else:
             st.error("Please make a prediction before saving.")
 
@@ -117,7 +136,7 @@ if uploaded_file is not None:
     filtered_data = pd.read_sql_query(f"SELECT * FROM heart_data WHERE age > {age_filter}", conn)
     st.write(filtered_data)
 
-    # Step 8: Aggregate Data
+    # Step 7: Aggregate Data
     st.header("Aggregate Data")
     agg_query = "SELECT target, AVG(chol) as avg_chol FROM heart_data GROUP BY target"
     agg_data = pd.read_sql_query(agg_query, conn)
@@ -125,3 +144,4 @@ if uploaded_file is not None:
 
     # Close the database connection
     conn.close()
+
