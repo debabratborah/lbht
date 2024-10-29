@@ -95,14 +95,13 @@ if uploaded_file is not None:
 
     # Step 4: Save predictions in SQL
     if st.button("Save Prediction"):
-        if st.session_state.prediction is not None: 
-            predicted = int(st.session_state.prediction[100])  # Get the predicted value
+        if st.session_state.prediction is not None:  # Ensure prediction is made before saving
+            predicted = int(st.session_state.prediction[0])  # Get the predicted value
             
             try:
-                # Drop the predictions table if it exists and create it again
-                cursor.execute("DROP TABLE IF EXISTS predictions")
+                # Create the predictions table if it does not exist
                 cursor.execute('''
-                CREATE TABLE predictions (
+                CREATE TABLE IF NOT EXISTS predictions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     predicted INTEGER NOT NULL
@@ -137,7 +136,7 @@ if uploaded_file is not None:
     filtered_data = pd.read_sql_query(f"SELECT * FROM heart_data WHERE age > {age_filter}", conn)
     st.write(filtered_data)
 
-    # Step 7: Aggregate Data
+    # Step 8: Aggregate Data
     st.header("Aggregate Data")
     agg_query = "SELECT target, AVG(chol) as avg_chol FROM heart_data GROUP BY target"
     agg_data = pd.read_sql_query(agg_query, conn)
