@@ -95,8 +95,8 @@ if uploaded_file is not None:
 
     # Step 4: Save predictions in SQL
     if st.button("Save Prediction"):
-        if st.session_state.prediction is not None:  # Ensure prediction is made before saving
-            predicted = int(st.session_state.prediction[0])  # Get the predicted value
+        if st.session_state.prediction is not None: 
+            predicted = int(st.session_state.prediction[100])  # Get the predicted value
             
             try:
                 # Drop the predictions table if it exists and create it again
