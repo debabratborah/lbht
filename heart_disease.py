@@ -6,9 +6,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# File path for the CSV file (update this path to where your CSV is located)
-csv_file_path = "heart_disease_data.csv"
-
 # Streamlit interface
 st.title("Heart Disease Prediction App")
 
@@ -16,22 +13,12 @@ st.title("Heart Disease Prediction App")
 if 'prediction' not in st.session_state:
     st.session_state.prediction = None
 
-# Step 1: Load the data from CSV
-try:
-    # Directly read the CSV file from the specified path
-    heart_data = pd.read_csv(csv_file_path)
-    st.write("Data Preview:")
-    st.dataframe(heart_data.head())
-except FileNotFoundError:
-    st.error("The specified CSV file was not found. Please check the file path.")
-except pd.errors.EmptyDataError:
-    st.error("The CSV file is empty.")
-except pd.errors.ParserError:
-    st.error("Error parsing the CSV file. Please check its format.")
-except Exception as e:
-    st.error(f"An unexpected error occurred: {e}")
+# Load CSV data directly (no upload)
+heart_data = pd.read_csv("heart_disease_data.csv")  # Ensure this file is in the same directory
+st.write("Data Preview:")
+st.dataframe(heart_data.head())
 
-# Step 2: Connect to SQLite database and load the data
+# Step 1: Connect to SQLite database and load the data
 conn = sqlite3.connect('heart_disease.db')
 cursor = conn.cursor()
 
@@ -58,11 +45,12 @@ CREATE TABLE IF NOT EXISTS heart_data (
 cursor.execute(create_table_query)
 conn.commit()
 
-# Insert data into the SQL table
-heart_data.to_sql('heart_data', conn, if_exists='replace', index=False)
-st.write("Data successfully imported into the database.")
+# Insert data into the SQL table if it's empty
+if cursor.execute("SELECT COUNT(*) FROM heart_data").fetchone()[0] == 0:
+    heart_data.to_sql('heart_data', conn, if_exists='replace', index=False)
+    st.write("Data successfully imported into the database.")
 
-# Step 3: Train the Model
+# Step 2: Train the Model
 df = pd.read_sql_query("SELECT * FROM heart_data", conn)
 X = df.drop(columns='target', axis=1).values
 Y = df['target'].values
@@ -78,7 +66,7 @@ test_accuracy = accuracy_score(Y_test, model.predict(X_test))
 st.write(f"Training Accuracy: {train_accuracy:.2f}")
 st.write(f"Test Accuracy: {test_accuracy:.2f}")
 
-# Step 4: Predict heart disease based on user input
+# Step 3: Predict heart disease based on user input
 st.header("Predict Heart Disease")
 name = st.text_input("Enter your name:")  # Input for name
 age = st.number_input("Age", min_value=1, max_value=120, value=30)
@@ -104,11 +92,11 @@ if st.button("Predict"):
     else:
         st.warning(f"{name} has heart disease.")
 
-# Step 5: Save predictions in SQL
+# Step 4: Save predictions in SQL
 if st.button("Save Prediction"):
     if st.session_state.prediction is not None:  # Ensure prediction is made before saving
         predicted = int(st.session_state.prediction[0])  # Get the predicted value
-        
+
         try:
             # Create the predictions table if it does not exist
             cursor.execute('''
@@ -127,31 +115,64 @@ if st.button("Save Prediction"):
                 st.write("Prediction saved to the database.")
             else:
                 st.error("Name cannot be empty. Please enter a name.")
-        
+
         except sqlite3.OperationalError as e:
             st.error(f"Operational Error: {e}")
-        
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
     else:
         st.error("Please make a prediction before saving.")
 
-# Step 6: Display predictions from the database
+# Step 5: Display predictions from the database
 if st.button("Show Predictions"):
     prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions", conn)
     st.write(prediction_df)
 
-# Step 7: Data Filtering
-st.header("Filter Data")
-age_filter = st.number_input("Filter Age", min_value=1, max_value=120)
-filtered_data = pd.read_sql_query(f"SELECT * FROM heart_data WHERE age > {age_filter}", conn)
+# Additional SQL Functionality
+
+# Step 6: Filtering predictions by outcome
+st.header("Filter Predictions by Outcome")
+outcome_filter = st.selectbox("Select Outcome", ["All", "No Heart Disease", "Heart Disease"])
+if outcome_filter == "No Heart Disease":
+    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions WHERE predicted = 0", conn)
+elif outcome_filter == "Heart Disease":
+    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions WHERE predicted = 1", conn)
+else:
+    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions", conn)
+st.write(prediction_df)
+
+# Step 7: Advanced Filtering
+st.header("Advanced Filtering")
+age_filter = st.number_input("Filter Age", min_value=1, max_value=120, value=30)
+chol_filter = st.number_input("Filter Cholesterol Level", min_value=100, max_value=400, value=200)
+
+advanced_query = f"""
+SELECT * FROM heart_data 
+WHERE age >= {age_filter} AND chol <= {chol_filter}
+"""
+filtered_data = pd.read_sql_query(advanced_query, conn)
 st.write(filtered_data)
 
-# Step 8: Aggregate Data
-st.header("Aggregate Data")
-agg_query = "SELECT target, AVG(chol) as avg_chol FROM heart_data GROUP BY target"
-agg_data = pd.read_sql_query(agg_query, conn)
-st.write(agg_data)
+# Step 8: Export Data to CSV
+if st.button("Export Predictions to CSV"):
+    predictions_to_export = pd.read_sql_query("SELECT * FROM predictions", conn)
+    predictions_to_export.to_csv("predictions_export.csv", index=False)
+    st.success("Predictions exported to predictions_export.csv")
 
-# Close the database connection
+# Step 9: Delete Prediction Record
+st.header("Delete Prediction Record")
+delete_id = st.number_input("Enter Prediction ID to Delete", min_value=1)
+if st.button("Delete Record"):
+    cursor.execute("DELETE FROM predictions WHERE id = ?", (delete_id,))
+    conn.commit()
+    st.success("Record deleted successfully.")
+
+# Step 10: Count Records
+st.header("Count Records in Predictions Table")
+count_query = "SELECT COUNT(*) FROM predictions"
+total_count = cursor.execute(count_query).fetchone()[0]
+st.write(f"Total Predictions Records: {total_count}")
+
+# Close the connection
 conn.close()
