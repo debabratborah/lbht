@@ -99,9 +99,10 @@ if uploaded_file is not None:
             predicted = int(st.session_state.prediction[0])  # Get the predicted value
             
             try:
-                # Create the predictions table if it does not exist
+                # Drop the predictions table if it exists and create it again
+                cursor.execute("DROP TABLE IF EXISTS predictions")
                 cursor.execute('''
-                CREATE TABLE IF NOT EXISTS predictions (
+                CREATE TABLE predictions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     predicted INTEGER NOT NULL
@@ -144,4 +145,3 @@ if uploaded_file is not None:
 
     # Close the database connection
     conn.close()
-
