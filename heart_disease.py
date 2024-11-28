@@ -98,11 +98,24 @@ if st.button("Save Prediction"):
         predicted = int(st.session_state.prediction[0])  # Get the predicted value
 
         try:
-            # Create the predictions table if it does not exist
+            # Create the predictions table with additional attributes
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                sex INTEGER NOT NULL,
+                cp INTEGER NOT NULL,
+                trestbps INTEGER NOT NULL,
+                chol INTEGER NOT NULL,
+                fbs INTEGER NOT NULL,
+                restecg INTEGER NOT NULL,
+                thalach INTEGER NOT NULL,
+                exang INTEGER NOT NULL,
+                oldpeak REAL NOT NULL,
+                slope INTEGER NOT NULL,
+                ca INTEGER NOT NULL,
+                thal INTEGER NOT NULL,
                 predicted INTEGER NOT NULL
             )
             ''')
@@ -110,7 +123,10 @@ if st.button("Save Prediction"):
 
             # Insert into predictions table
             if name:  # Ensure name is not empty
-                cursor.execute("INSERT INTO predictions (name, predicted) VALUES (?, ?)", (name, predicted))
+                cursor.execute("""
+                    INSERT INTO predictions (name, age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal, predicted)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (name, age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal, predicted))
                 conn.commit()
                 st.write("Prediction saved to the database.")
             else:
@@ -126,7 +142,7 @@ if st.button("Save Prediction"):
 
 # Step 5: Display predictions from the database
 if st.button("Show Predictions"):
-    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions", conn)
+    prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
     st.write(prediction_df)
 
 # Additional SQL Functionality
@@ -135,11 +151,11 @@ if st.button("Show Predictions"):
 st.header("Filter Predictions by Outcome")
 outcome_filter = st.selectbox("Select Outcome", ["All", "No Heart Disease", "Heart Disease"])
 if outcome_filter == "No Heart Disease":
-    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions WHERE predicted = 0", conn)
+    prediction_df = pd.read_sql_query("SELECT * FROM predictions WHERE predicted = 0", conn)
 elif outcome_filter == "Heart Disease":
-    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions WHERE predicted = 1", conn)
+    prediction_df = pd.read_sql_query("SELECT * FROM predictions WHERE predicted = 1", conn)
 else:
-    prediction_df = pd.read_sql_query("SELECT name, predicted FROM predictions", conn)
+    prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
 st.write(prediction_df)
 
 # Step 7: Advanced Filtering
@@ -176,3 +192,4 @@ st.write(f"Total Predictions Records: {total_count}")
 
 # Close the connection
 conn.close()
+
