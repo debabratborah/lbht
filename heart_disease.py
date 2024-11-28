@@ -158,24 +158,6 @@ else:
     prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
 st.write(prediction_df)
 
-# Step 7: Advanced Filtering
-st.header("Advanced Filtering")
-age_filter = st.number_input("Filter Age", min_value=1, max_value=120, value=30)
-chol_filter = st.number_input("Filter Cholesterol Level", min_value=100, max_value=400, value=200)
-
-advanced_query = f"""
-SELECT * FROM heart_data 
-WHERE age >= {age_filter} AND chol <= {chol_filter}
-"""
-filtered_data = pd.read_sql_query(advanced_query, conn)
-st.write(filtered_data)
-
-# Step 8: Export Data to CSV
-if st.button("Export Predictions to CSV"):
-    predictions_to_export = pd.read_sql_query("SELECT * FROM predictions", conn)
-    predictions_to_export.to_csv("predictions_export.csv", index=False)
-    st.success("Predictions exported to predictions_export.csv")
-
 # Step 9: Delete Prediction Record
 st.header("Delete Prediction Record")
 delete_id = st.number_input("Enter Prediction ID to Delete", min_value=1)
