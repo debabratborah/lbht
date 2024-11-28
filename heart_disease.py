@@ -145,8 +145,6 @@ if st.button("Show Predictions"):
     prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
     st.write(prediction_df)
 
-# Additional SQL Functionality
-
 # Step 6: Filtering predictions by outcome
 st.header("Filter Predictions by Outcome")
 outcome_filter = st.selectbox("Select Outcome", ["All", "No Heart Disease", "Heart Disease"])
@@ -158,7 +156,13 @@ else:
     prediction_df = pd.read_sql_query("SELECT * FROM predictions", conn)
 st.write(prediction_df)
 
-# Step 9: Delete Prediction Record
+# Step 7: Export Data to CSV
+if st.button("Export Predictions to CSV"):
+    predictions_to_export = pd.read_sql_query("SELECT * FROM predictions", conn)
+    predictions_to_export.to_csv("predictions_export.csv", index=False)
+    st.success("Predictions exported to predictions_export.csv")
+
+# Step 8: Delete Prediction Record
 st.header("Delete Prediction Record")
 delete_id = st.number_input("Enter Prediction ID to Delete", min_value=1)
 if st.button("Delete Record"):
@@ -166,7 +170,7 @@ if st.button("Delete Record"):
     conn.commit()
     st.success("Record deleted successfully.")
 
-# Step 10: Count Records
+# Step 9: Count Records
 st.header("Count Records in Predictions Table")
 count_query = "SELECT COUNT(*) FROM predictions"
 total_count = cursor.execute(count_query).fetchone()[0]
@@ -174,4 +178,5 @@ st.write(f"Total Predictions Records: {total_count}")
 
 # Close the connection
 conn.close()
+
 
